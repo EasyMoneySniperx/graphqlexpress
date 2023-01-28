@@ -1,36 +1,64 @@
 const { ApolloServer, gql } = require("apollo-server");
+const axios = require('axios');
 
 
 const typeDefs = gql`
-  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
-  # This "Book" type defines the queryable fields for every book in our data source.
   type Book {
+    id: String  
     title: String
     author: String
   }
 
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
   type Query {
-    books: [Book]
+    Getbooks: [Book],
+    Getbook(id:String!):[Book]
+    Getquote: [Quote]
+  }
+  type Mutation {
+      CreateBook(id: String!,title: String!, author: String!): Book
+      DeleteBook(id: String!): Book
+      UpdateBook(id: String!,title: String!, author: String!): Book 
+      CreateBrequ(quote: String!, author: String!): Quote
+
+  }
+
+  type Quote {
+    quote: String,
+    author: String
   }
 `;
+let breaking = [];
 
-const books = [
+let books = [
     {
+      id:"1",
       title: 'The Awakening',
       author: 'Kate Chopin',
     },
     {
+      id:"2",  
       title: 'City of Glass',
       author: 'Paul Auster',
     },
+    {
+       id:"3",  
+       title: 'Del amor y otros demonios',
+       author: 'Gabriel garcia Marquez',
+    }
   ];
   const resolvers = {
+    Mutation: {
+        CreateBrequ: (_,arg) => {breaking.push(arg); return arg},
+        CreateBook: (_,arg) => {books.push(arg); return arg},
+                           
+    },  
     Query: {
-      books: () => books,
+      Getbooks: () => books,
+      Getbook: (_,arg) => [books.find(number => number.id==arg.id)],
+      Getquote: async () => {
+        const {data: breakingquotes} = await axios.get('https://api.breakingbadquotes.xyz/v1/quotes/10')
+        breaking = breakingquotes;
+        return breakingquotes}
     },
   };
 
