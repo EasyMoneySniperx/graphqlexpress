@@ -1,4 +1,5 @@
 const { ApolloServer, gql } = require("apollo-server");
+const axios = require('axios');
 
 
 const typeDefs = gql`
@@ -11,13 +12,22 @@ const typeDefs = gql`
   type Query {
     Getbooks: [Book],
     Getbook(id:String!):[Book]
+    Getquote: [Quote]
   }
   type Mutation {
       CreateBook(id: String!,title: String!, author: String!): Book
       DeleteBook(id: String!): Book
       UpdateBook(id: String!,title: String!, author: String!): Book 
+      CreateBrequ(quote: String!, author: String!): Quote
+
+  }
+
+  type Quote {
+    quote: String,
+    author: String
   }
 `;
+let breaking = [];
 
 let books = [
     {
@@ -38,23 +48,17 @@ let books = [
   ];
   const resolvers = {
     Mutation: {
+        CreateBrequ: (_,arg) => {breaking.push(arg); return arg},
         CreateBook: (_,arg) => {books.push(arg); return arg},
-        DeleteBook: (_,arg) => { 
-                                 let finalbooks=books.filter(book => book.id != arg.id);
-                                 let bookdeleted = books.find(book => book.id == arg.id );   
-                                 books = [...finalbooks]; 
-                                 return bookdeleted
-                                },
-        UpdateBook:(_,arg) => {  let objIdx = books.findIndex(book => book.id == arg.id);
-                                 books[objIdx] = arg
-                                 return arg   
-             
-                              }                        
-
+                           
     },  
     Query: {
       Getbooks: () => books,
-      Getbook: (_,arg) => books.find(number => number.id==arg.id)
+      Getbook: (_,arg) => [books.find(number => number.id==arg.id)],
+      Getquote: async () => {
+        const {data: breakingquotes} = await axios.get('https://api.breakingbadquotes.xyz/v1/quotes/10')
+        breaking = breakingquotes;
+        return breakingquotes}
     },
   };
 
